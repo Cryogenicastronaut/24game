@@ -1,0 +1,199 @@
+
+<style>
+  .wrap { display: flex; flex-direction: column; align-items: center; padding: 2rem 1rem; gap: 1.5rem; }
+  .card-scene { width: 300px; height: 300px; }
+  .card-svg { width: 100%; height: 100%; }
+  .timer { font-size: 28px; font-weight: 600; font-family: monospace; color: var(--color-text-primary); letter-spacing: 2px; }
+  .buttons { display: flex; gap: 12px; }
+  .btn {
+    font-size: 15px; font-weight: 500; padding: 11px 28px;
+    background: transparent; border: 0.5px solid var(--color-border-secondary);
+    border-radius: var(--border-radius-lg); cursor: pointer;
+    color: var(--color-text-primary); transition: background 0.15s, transform 0.1s;
+  }
+  .btn:hover { background: var(--color-background-secondary); }
+  .btn:active { transform: scale(0.97); }
+  .btn:disabled { opacity: 0.35; cursor: default; transform: none; }
+  .counter { font-size: 13px; color: var(--color-text-secondary); }
+</style>
+
+<div class="wrap">
+  <div class="timer" id="timer">0:00</div>
+  <div class="card-scene">
+    <svg class="card-svg" viewBox="0 0 320 320" xmlns="http://www.w3.org/2000/svg" id="cardsvg">
+      <rect x="4" y="4" width="312" height="312" rx="18" fill="#1a3a9c"/>
+      <circle cx="160" cy="160" r="128" fill="#f5c842"/>
+      <rect x="122" y="122" width="76" height="76" rx="4" fill="#cc1f2e"/>
+
+      <!-- Dots: drawn directly at each corner, no rotation tricks -->
+      <!-- TL: vertical stack, dots go downward from top -->
+      <g id="dots-tl"></g>
+      <!-- TR: horizontal row, dots go leftward from right -->
+      <g id="dots-tr"></g>
+      <!-- BR: vertical stack, dots go upward from bottom -->
+      <g id="dots-br"></g>
+      <!-- BL: horizontal row, dots go rightward from left -->
+      <g id="dots-bl"></g>
+
+      <!-- Numbers -->
+      <g id="grp-top" transform="translate(160,72)">
+        <text id="num-top" text-anchor="middle" dominant-baseline="middle" font-size="62" font-weight="700" font-family="Georgia,serif" fill="#111">0</text>
+        <rect id="line-top" x="-18" y="27" width="36" height="7" rx="3" fill="#cc1f2e" opacity="0"/>
+      </g>
+      <g id="grp-right" transform="translate(252,160) rotate(90)">
+        <text id="num-right" text-anchor="middle" dominant-baseline="middle" font-size="62" font-weight="700" font-family="Georgia,serif" fill="#111">0</text>
+        <rect id="line-right" x="-18" y="27" width="36" height="7" rx="3" fill="#cc1f2e" opacity="0"/>
+      </g>
+      <g id="grp-bottom" transform="translate(160,248) rotate(180)">
+        <text id="num-bottom" text-anchor="middle" dominant-baseline="middle" font-size="62" font-weight="700" font-family="Georgia,serif" fill="#111">0</text>
+        <rect id="line-bottom" x="-18" y="27" width="36" height="7" rx="3" fill="#cc1f2e" opacity="0"/>
+      </g>
+      <g id="grp-left" transform="translate(68,160) rotate(270)">
+        <text id="num-left" text-anchor="middle" dominant-baseline="middle" font-size="62" font-weight="700" font-family="Georgia,serif" fill="#111">0</text>
+        <rect id="line-left" x="-18" y="27" width="36" height="7" rx="3" fill="#cc1f2e" opacity="0"/>
+      </g>
+    </svg>
+  </div>
+  <div class="buttons">
+    <button class="btn" id="prev-btn" onclick="prevCard()" disabled>← Prev</button>
+    <button class="btn" onclick="nextCard()">Next →</button>
+  </div>
+  <span class="counter" id="counter">Card 1</span>
+</div>
+
+<script>
+const combos = [
+[1,1,2,7,'hard'],[1,1,3,5,'hard'],[1,1,4,9,'hard'],[1,2,7,7,'hard'],[1,3,7,7,'hard'],[1,4,7,9,'hard'],[1,5,7,9,'hard'],[1,5,9,9,'hard'],[1,7,7,9,'hard'],[1,7,8,8,'hard'],[2,2,5,7,'hard'],[2,4,9,9,'hard'],[3,3,3,3,'hard'],[3,3,3,5,'hard'],[3,3,5,5,'hard'],[4,5,6,9,'hard'],[5,5,5,5,'hard'],[5,5,5,9,'hard'],[5,5,6,8,'hard'],[5,5,8,8,'hard'],[5,5,9,9,'hard'],[5,6,6,9,'hard'],[1,1,1,8,'hard'],[1,1,2,9,'hard'],[1,1,4,4,'hard'],[1,1,5,7,'hard'],[1,2,2,9,'hard'],[1,3,5,7,'hard'],[1,4,7,7,'hard'],[1,5,5,9,'hard'],[1,6,6,6,'hard'],[1,6,7,9,'hard'],[2,2,2,7,'hard'],[2,2,3,5,'hard'],[2,2,5,8,'hard'],[2,4,4,9,'hard'],[2,4,7,7,'hard'],[2,5,7,8,'hard'],[2,5,7,9,'hard'],[2,7,8,9,'hard'],[3,3,3,9,'hard'],[3,3,5,7,'hard'],[3,4,4,4,'hard'],[3,7,7,9,'hard'],[4,4,8,9,'hard'],[4,5,5,7,'hard'],[4,5,5,8,'hard'],[4,7,7,7,'hard'],[4,7,9,9,'hard'],[4,8,9,9,'hard'],[5,6,6,6,'hard'],[5,6,7,7,'hard'],[5,7,7,9,'hard'],[1,1,3,4,'hard'],[1,1,6,8,'hard'],[1,1,6,9,'hard'],[1,1,8,8,'hard'],[1,2,2,4,'hard'],[1,2,3,3,'hard'],[1,3,3,3,'hard'],[1,3,5,6,'hard'],[2,2,2,5,'hard'],[2,2,2,9,'hard'],[2,2,5,5,'hard'],[2,3,7,7,'hard'],[2,4,5,5,'hard'],[2,5,5,7,'hard'],[2,5,7,7,'hard'],[2,5,8,8,'hard'],[3,3,4,4,'hard'],[3,3,7,8,'hard'],[4,4,4,4,'hard'],[5,8,8,8,'hard'],[6,6,6,6,'hard'],[6,6,8,8,'hard'],[6,7,8,9,'hard'],[1,1,5,8,'hard'],[1,2,2,5,'hard'],[1,2,5,9,'hard'],[1,4,6,9,'hard'],[1,5,5,6,'hard'],[2,2,2,3,'hard'],[2,2,3,3,'hard'],[2,3,5,8,'hard'],[2,4,8,9,'hard'],[2,5,5,8,'hard'],[2,6,6,9,'hard'],[3,3,6,6,'hard'],[4,4,4,5,'hard'],[4,4,4,7,'hard'],[4,5,9,9,'hard'],[1,1,2,6,'hard'],[1,1,6,6,'hard'],[1,2,2,7,'hard'],[1,3,7,8,'hard'],[1,4,4,4,'hard'],[2,2,3,4,'hard'],[2,2,4,4,'hard'],[2,2,4,9,'hard'],[2,2,6,7,'hard'],[2,3,3,3,'hard'],[2,3,3,5,'hard'],[2,4,4,5,'hard'],[2,6,8,8,'hard'],[2,7,7,8,'hard'],[3,3,3,4,'hard'],[3,7,7,7,'hard'],[5,5,7,7,'hard'],[5,8,8,9,'hard'],
+[1,2,5,5,'medium'],[1,3,7,9,'medium'],[1,3,9,9,'medium'],[1,4,5,8,'medium'],[1,5,6,6,'medium'],[1,5,6,8,'medium'],[1,5,8,9,'medium'],[1,6,6,9,'medium'],[1,7,9,9,'medium'],[1,8,8,8,'medium'],[1,8,8,9,'medium'],[2,2,2,4,'medium'],[2,2,3,7,'medium'],[2,2,5,9,'medium'],[2,2,6,9,'medium'],[2,2,7,7,'medium'],[2,2,8,9,'medium'],[2,4,7,8,'medium'],[2,5,6,9,'medium'],[2,6,6,7,'medium'],[2,8,8,9,'medium'],[3,3,3,7,'medium'],[3,3,9,9,'medium'],[3,4,5,6,'medium'],[3,4,7,8,'medium'],[3,5,5,6,'medium'],[3,5,5,7,'medium'],[3,5,5,9,'medium'],[3,5,7,9,'medium'],[3,7,8,9,'medium'],[4,4,4,9,'medium'],[4,4,5,7,'medium'],[4,5,6,8,'medium'],[4,5,7,7,'medium'],[4,5,8,8,'medium'],[4,6,7,9,'medium'],[4,8,8,9,'medium'],[5,5,6,7,'medium'],[5,6,6,8,'medium'],[5,6,7,9,'medium'],[5,7,8,9,'medium'],[6,8,8,8,'medium'],[7,8,8,9,'medium'],[1,3,3,8,'medium'],[1,4,4,6,'medium'],[1,4,4,9,'medium'],[1,4,5,7,'medium'],[1,4,5,9,'medium'],[1,4,6,6,'medium'],[1,4,6,7,'medium'],[1,5,6,7,'medium'],[1,6,8,8,'medium'],[1,6,9,9,'medium'],[2,2,5,6,'medium'],[2,2,6,6,'medium'],[2,6,7,8,'medium'],[3,5,8,8,'medium'],[3,5,8,9,'medium'],[3,5,9,9,'medium'],[3,7,9,9,'medium'],[4,4,7,8,'medium'],[4,4,7,9,'medium'],[4,6,6,9,'medium'],[5,5,7,8,'medium'],[6,8,8,9,'medium'],[1,1,5,5,'medium'],[1,2,2,8,'medium'],[1,2,3,5,'medium'],[1,2,4,5,'medium'],[1,2,4,6,'medium'],[1,2,4,7,'medium'],[1,3,8,9,'medium'],[1,5,7,8,'medium'],[2,3,4,5,'medium'],[2,3,5,5,'medium'],[2,3,8,9,'medium'],[2,4,5,7,'medium'],[2,4,5,9,'medium'],[2,5,6,6,'medium'],[2,6,8,9,'medium'],[2,7,8,8,'medium'],[3,3,4,7,'medium'],[3,3,6,8,'medium'],[3,4,5,9,'medium'],[3,4,6,9,'medium'],[3,5,6,6,'medium'],[3,5,6,8,'medium'],[3,8,8,9,'medium'],[3,9,9,9,'medium'],[4,4,5,6,'medium'],[4,4,6,8,'medium'],[4,4,6,9,'medium'],[4,5,6,7,'medium'],[4,7,7,8,'medium'],[5,5,5,6,'medium'],[5,5,6,6,'medium'],[5,6,8,8,'medium'],[5,6,9,9,'medium'],[6,6,6,8,'medium'],[6,6,7,9,'medium'],[1,2,3,7,'medium'],[1,2,4,9,'medium'],[1,2,7,8,'medium'],[1,2,7,9,'medium'],[1,3,3,6,'medium'],[1,3,3,9,'medium'],[1,3,4,7,'medium'],[1,4,4,7,'medium'],[1,4,5,5,'medium'],[2,2,7,8,'medium'],[2,3,6,8,'medium'],[2,4,4,7,'medium'],[2,4,7,9,'medium'],[2,5,5,9,'medium'],[2,8,8,8,'medium'],[3,3,3,6,'medium'],[3,3,4,5,'medium'],[3,3,6,7,'medium'],[3,3,7,9,'medium'],[3,3,8,9,'medium'],[3,4,4,5,'medium'],[3,4,4,9,'medium'],[3,4,5,5,'medium'],[3,4,7,7,'medium'],[3,5,6,9,'medium'],[3,5,7,8,'medium'],[3,6,8,8,'medium'],[4,5,5,9,'medium'],[4,5,7,9,'medium'],[4,5,8,9,'medium'],[4,7,8,8,'medium'],[5,5,8,9,'medium'],[5,6,6,7,'medium'],[6,6,8,9,'medium'],[6,8,9,9,'medium'],[1,2,3,4,'medium'],[1,2,3,8,'medium'],[1,2,5,6,'medium'],[1,3,5,8,'medium'],[1,4,8,9,'medium'],[2,2,3,6,'medium'],[2,3,3,7,'medium'],[2,3,6,7,'medium'],[2,6,6,6,'medium'],[2,6,7,9,'medium'],[2,6,9,9,'medium'],[2,8,9,9,'medium'],[3,3,4,8,'medium'],[3,3,5,9,'medium'],[3,4,4,7,'medium'],[3,4,7,9,'medium'],[3,4,8,9,'medium'],[3,6,7,7,'medium'],[4,4,4,8,'medium'],[4,4,5,8,'medium'],[4,5,5,5,'medium'],[4,5,6,6,'medium'],[4,8,8,8,'medium'],
+[1,1,2,8,'easy'],[1,3,3,7,'easy'],[1,3,4,5,'easy'],[1,3,6,9,'easy'],[1,4,4,5,'easy'],[1,5,6,9,'easy'],[2,2,4,7,'easy'],[2,3,4,7,'easy'],[2,4,4,6,'easy'],[2,5,8,9,'easy'],[3,4,6,6,'easy'],[3,6,6,7,'easy'],[3,6,6,9,'easy'],[3,6,7,9,'easy'],[3,6,9,9,'easy'],[4,4,5,5,'easy'],[4,7,8,9,'easy'],[5,6,7,8,'easy'],[1,1,3,9,'easy'],[1,2,8,9,'easy'],[1,3,4,8,'easy'],[1,3,5,9,'easy'],[1,7,8,9,'easy'],[2,2,3,9,'easy'],[2,2,6,8,'easy'],[2,3,3,9,'easy'],[2,3,4,4,'easy'],[2,3,5,7,'easy'],[2,3,5,9,'easy'],[2,3,8,8,'easy'],[2,4,5,6,'easy'],[2,4,6,7,'easy'],[2,5,6,7,'easy'],[2,5,6,8,'easy'],[3,4,4,6,'easy'],[3,5,6,7,'easy'],[3,7,8,8,'easy'],[4,6,7,8,'easy'],[5,6,8,9,'easy'],[5,7,8,8,'easy'],[6,6,6,9,'easy'],[1,1,3,6,'easy'],[1,1,3,7,'easy'],[1,1,4,5,'easy'],[1,1,4,7,'easy'],[1,1,5,6,'easy'],[1,2,6,7,'easy'],[1,2,8,8,'easy'],[1,3,3,5,'easy'],[1,3,8,8,'easy'],[1,4,4,8,'easy'],[1,5,8,8,'easy'],[1,6,8,9,'easy'],[2,2,4,5,'easy'],[2,2,8,8,'easy'],[2,3,3,6,'easy'],[2,3,4,8,'easy'],[2,3,9,9,'easy'],[3,3,3,8,'easy'],[3,3,4,6,'easy'],[3,3,4,9,'easy'],[3,4,6,8,'easy'],[3,6,7,8,'easy'],[3,6,8,9,'easy'],[3,7,7,8,'easy'],[3,8,9,9,'easy'],[4,4,4,6,'easy'],[4,5,5,6,'easy'],[4,6,9,9,'easy'],[6,7,9,9,'easy'],[1,2,6,8,'easy'],[1,4,8,8,'easy'],[2,2,2,8,'easy'],[2,3,3,8,'easy'],[2,3,4,9,'easy'],[2,3,7,8,'easy'],[2,3,7,9,'easy'],[3,5,5,8,'easy'],[3,6,6,8,'easy'],[4,6,6,6,'easy'],[4,6,6,7,'easy'],[4,6,7,7,'easy'],[4,6,8,9,'easy'],[1,1,3,8,'easy'],[1,1,4,6,'easy'],[1,2,4,4,'easy'],[1,2,5,7,'easy'],[2,4,4,4,'easy'],[2,6,6,8,'easy'],[3,3,5,6,'easy'],[3,4,5,7,'easy'],[3,4,9,9,'easy'],[3,8,8,8,'easy'],[4,4,8,8,'easy'],[4,5,7,8,'easy'],[4,6,6,8,'easy'],[1,1,4,8,'easy'],[1,3,3,4,'easy'],[1,4,7,8,'easy'],[2,2,3,8,'easy'],[3,6,6,6,'easy'],[1,2,6,9,'easy'],[1,3,4,4,'easy'],[2,3,5,6,'easy'],[1,2,3,9,'easy'],[1,4,6,8,'easy'],[2,2,4,8,'easy'],[2,3,6,6,'easy'],[2,4,8,8,'easy'],[3,3,6,9,'easy'],[1,2,2,6,'easy'],[1,3,6,6,'easy'],[2,4,5,8,'easy'],[2,4,6,6,'easy'],[1,2,3,6,'easy'],[1,3,6,7,'easy'],[1,3,6,8,'easy'],[2,3,4,6,'easy'],[2,4,6,9,'easy'],[3,4,4,8,'easy'],[3,4,5,8,'easy'],[1,3,4,9,'easy'],[2,3,6,9,'easy'],[4,6,8,8,'easy'],[2,2,4,6,'easy'],[2,4,4,8,'easy'],[1,2,5,8,'easy'],[2,4,6,8,'easy'],[1,2,6,6,'easy'],[1,2,4,8,'easy']
+];
+
+const slots = ['top','right','bottom','left'];
+let history = [];
+let histPos = -1;
+let timerInterval = null;
+let startTime = null;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function startTimer() {
+  if (timerInterval) clearInterval(timerInterval);
+  startTime = Date.now();
+  timerInterval = setInterval(updateTimer, 500);
+  updateTimer();
+}
+
+function updateTimer() {
+  const elapsed = Math.floor((Date.now() - startTime) / 1000);
+  const m = Math.floor(elapsed / 60);
+  const s = elapsed % 60;
+  document.getElementById('timer').textContent = m + ':' + String(s).padStart(2,'0');
+}
+
+function makeDot(cx, cy, r, color) {
+  const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
+  c.setAttribute('cx', cx); c.setAttribute('cy', cy);
+  c.setAttribute('r', r); c.setAttribute('fill', color);
+  return c;
+}
+
+function drawDots(difficulty) {
+  const ns = 'http://www.w3.org/2000/svg';
+  // Clear all corners
+  ['tl','tr','br','bl'].forEach(id => {
+    document.getElementById('dots-' + id).innerHTML = '';
+  });
+
+  const tl = document.getElementById('dots-tl');
+  const tr = document.getElementById('dots-tr');
+  const br = document.getElementById('dots-br');
+  const bl = document.getElementById('dots-bl');
+
+  if (difficulty === 'easy') {
+    // 1 white dot per corner
+    const r = 7;
+    tl.appendChild(makeDot(22, 22, r, 'white'));
+    tr.appendChild(makeDot(298, 22, r, 'white'));
+    br.appendChild(makeDot(298, 298, r, 'white'));
+    bl.appendChild(makeDot(22, 298, r, 'white'));
+
+  } else if (difficulty === 'medium') {
+    // 2 red dots per corner
+    // TL: vertical — stacked top to bottom
+    tl.appendChild(makeDot(22, 15, 6, '#cc1f2e'));
+    tl.appendChild(makeDot(22, 29, 6, '#cc1f2e'));
+    // TR: horizontal — side by side going left from right edge
+    tr.appendChild(makeDot(305, 22, 6, '#cc1f2e'));
+    tr.appendChild(makeDot(291, 22, 6, '#cc1f2e'));
+    // BR: vertical — stacked bottom to top
+    br.appendChild(makeDot(298, 305, 6, '#cc1f2e'));
+    br.appendChild(makeDot(298, 291, 6, '#cc1f2e'));
+    // BL: horizontal — side by side going right from left edge
+    bl.appendChild(makeDot(15, 298, 6, '#cc1f2e'));
+    bl.appendChild(makeDot(29, 298, 6, '#cc1f2e'));
+
+  } else {
+    // 3 yellow dots per corner
+    // TL: vertical
+    tl.appendChild(makeDot(22, 12, 5, '#f5c842'));
+    tl.appendChild(makeDot(22, 24, 5, '#f5c842'));
+    tl.appendChild(makeDot(22, 36, 5, '#f5c842'));
+    // TR: horizontal going left
+    tr.appendChild(makeDot(308, 22, 5, '#f5c842'));
+    tr.appendChild(makeDot(296, 22, 5, '#f5c842'));
+    tr.appendChild(makeDot(284, 22, 5, '#f5c842'));
+    // BR: vertical going up
+    br.appendChild(makeDot(298, 308, 5, '#f5c842'));
+    br.appendChild(makeDot(298, 296, 5, '#f5c842'));
+    br.appendChild(makeDot(298, 284, 5, '#f5c842'));
+    // BL: horizontal going right
+    bl.appendChild(makeDot(12, 298, 5, '#f5c842'));
+    bl.appendChild(makeDot(24, 298, 5, '#f5c842'));
+    bl.appendChild(makeDot(36, 298, 5, '#f5c842'));
+  }
+}
+
+function renderCard(entry) {
+  const { nums, difficulty } = entry;
+  slots.forEach((s, i) => {
+    const n = nums[i];
+    document.getElementById('num-' + s).textContent = String(n);
+    document.getElementById('line-' + s).setAttribute('opacity', n === 9 ? '1' : '0');
+  });
+  drawDots(difficulty);
+}
+
+function nextCard() {
+  if (histPos < history.length - 1) history = history.slice(0, histPos + 1);
+  let idx;
+  do { idx = Math.floor(Math.random() * combos.length); }
+  while (history.length > 0 && idx === history[history.length-1].idx);
+  const row = combos[idx];
+  const nums = shuffle([row[0],row[1],row[2],row[3]]);
+  const difficulty = row[4];
+  history.push({ idx, nums, difficulty });
+  histPos = history.length - 1;
+  renderCard(history[histPos]);
+  document.getElementById('counter').textContent = 'Card ' + (histPos + 1);
+  document.getElementById('prev-btn').disabled = histPos === 0;
+  startTimer();
+}
+
+function prevCard() {
+  if (histPos <= 0) return;
+  histPos--;
+  renderCard(history[histPos]);
+  document.getElementById('counter').textContent = 'Card ' + (histPos + 1);
+  document.getElementById('prev-btn').disabled = histPos === 0;
+  startTimer();
+}
+
+nextCard();
+</script>
