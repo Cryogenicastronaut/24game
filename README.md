@@ -1,4 +1,4 @@
-<img width="808" height="979" alt="24game" src="https://github.com/user-attachments/assets/25f9a934-f769-4a2c-a765-5cce94af1c60" />
+<img width="973" height="973" alt="Screenshot 2026-05-18 034617" src="https://github.com/user-attachments/assets/5d1c3721-8b71-4a11-8b37-7ece7aaf5bf1" />
 
 https://cryogenicastronaut.github.io/24game/
 
